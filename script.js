@@ -78,7 +78,7 @@
           margin-bottom: 24px;
         }
         .form input[type="text"],
-        .form input[type="date"] {
+        .form input[type="date"] { /* Встроенный в браузер интерактивный выбор даты */
           flex: 1 1 200px;
           padding: 10px;
           border: 1px solid #ddd;
