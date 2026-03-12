@@ -7,7 +7,7 @@
       // Состояние
       this.tasks = []; // основной массив: id, title, date, completed
       this.filter = 'all'; // какой тип значений отображать: all, active, completed
-      this.sortOrder = 'asc'; // порядок сортировки по дате: asc или desc
+      this.sortOrder = 'asc'; // порядок сортировки по дате: none, asc или desc
       this.searchQuery = ''; // запрос для поиска по подстроке 
       this.editingId = null; // id редактируемой задачи или null
 
@@ -424,14 +424,16 @@
         filtered = filtered.filter(t => t.title.toLowerCase().includes(query));
       }
 
-      // Сортировка по дате
-      filtered.sort((a, b) => {
-        if (this.sortOrder === 'asc') {
-          return a.date.localeCompare(b.date);
-        } else {
-          return b.date.localeCompare(a.date);
-        }
-      });
+      // Сортировка только тогда, когда она активна
+      if (this.sortOrder !== 'none') {
+        filtered.sort((a, b) => {
+          if (this.sortOrder === 'asc') {
+            return a.date.localeCompare(b.date);
+          } else {
+            return b.date.localeCompare(a.date);
+          }
+        });
+      }
 
       return filtered;
     }
@@ -583,9 +585,10 @@
     // При "бросании"
     handleDrop(e) {
       e.preventDefault(); // не перезагружать
-      const targetLi = e.target.closest('.task');
+      const targetLi = e.target.closest('.task'); // нахождение "ближайшией" целевой задачи
       if (!targetLi) return;
 
+      // Id перетаскиваемой и целевой задач
       const draggedId = e.dataTransfer.getData('text/plain');
       const targetId = targetLi.dataset.id;
 
@@ -601,10 +604,16 @@
       const [draggedTask] = this.tasks.splice(draggedIndex, 1);
       this.tasks.splice(targetIndex, 0, draggedTask);
 
+      // Отключаем сортировку, так как теперь порядок ручной
+      this.sortOrder = 'none';
+      this.updateSortButtonText();
+
+      // Сохранение и отрисовка
       this.saveToLocalStorage();
-      this.render(); // перерисовываем с новым порядком
+      this.render();
     }
 
+    // Очистка после перетаскивания
     handleDragEnd(e) {
       e.target.classList.remove('dragging');
     }
@@ -632,13 +641,29 @@
 
       // Сортировка
       this.elements.sortBtn.addEventListener('click', () => {
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-        this.elements.sortBtn.textContent = this.sortOrder === 'asc' ? 'Сортировать по дате ↑' : 'Сортировать по дате ↓';
+        // Цикл: asc -> desc -> none -> asc
+        if (this.sortOrder === 'asc') {
+          this.sortOrder = 'desc';
+        } else if (this.sortOrder === 'desc') {
+          this.sortOrder = 'none';
+        } else {
+          this.sortOrder = 'asc';
+        }
+        this.updateSortButtonText();
         this.render();
       });
 
-      // Устанавливаем начальный текст кнопки сортировки
-      this.elements.sortBtn.textContent = this.sortOrder === 'asc' ? 'Сортировать по дате ↑' : 'Сортировать по дате ↓';
+      // Обновление текста кнопки сортировки
+      this.updateSortButtonText = () => {
+        if (this.sortOrder === 'asc') {
+          this.elements.sortBtn.textContent = 'Сортировать по дате ↑';
+        } else if (this.sortOrder === 'desc') {
+          this.elements.sortBtn.textContent = 'Сортировать по дате ↓';
+        } else {
+          this.elements.sortBtn.textContent = 'Ручной порядок';
+        }
+      };
+      this.updateSortButtonText();
     }
   }
 
